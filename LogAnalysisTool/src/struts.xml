@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.1//EN" "http://struts.apache.org/dtds/struts-2.1.dtd">
+<struts>
+	<constant name="struts.enable.DynamicMethodInvocation" value="true" />
+	<package name="default" namespace="/" extends="json-default">
+
+		<action name="chartAction" class="chartAction">
+			<result type="json" />
+		</action>
+		<action name="reportAction" class="reportAction">
+			<result type="json" />
+		</action>
+
+		<action name="LogAnalysisAction" class="logAnaylsisAction">
+			<result type="chain" name="success">chartAction</result>
+		</action>
+
+	    <action name="MailSendAction" class="mailSendAction">
+	    	<result type="json">
+	    		<param name="root">ajaxResultMap</param>
+	    	</result>
+		</action>
+
+		<!-- JSP -->
+
+		<action name="*">
+			<result>/jsp/index.jsp</result>
+		</action>
+
+	</package>
+</struts>    
