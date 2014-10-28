@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop-3.1.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<context:property-placeholder location="classpath:config.properties" />
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="${jdbc.driverClassName}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+	</bean>
+
+	<bean id="txManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<bean id="DBAccessor" class="com.accela.loganalyzer.frame.database.DBAccessor">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+
+	<!-- report -->
+	<bean id="chartDataConverter"
+		class="com.accela.loganalyzer.report.converter.ChartDataConverterImpl">
+	</bean>
+	<bean id="historyReportDao" class="com.accela.loganalyzer.report.dao.HistoryReportDaoImpl">
+		<property name="DBAccessor" ref="DBAccessor"></property>
+	</bean>
+	<bean id="chartDao" class="com.accela.loganalyzer.report.dao.ChartDaoImpl">
+		<property name="DBAccessor" ref="DBAccessor"></property>
+	</bean>
+	<bean id="tableDao" class="com.accela.loganalyzer.report.dao.TableDaoImpl">
+		<property name="DBAccessor" ref="DBAccessor"></property>
+	</bean>
+	<bean id="chartService" class="com.accela.loganalyzer.report.service.ChartServiceImpl">
+		<property name="chartDataConverter" ref="chartDataConverter"></property>
+		<property name="chartDao" ref="chartDao"></property>
+	</bean>
+	<bean id="tableService" class="com.accela.loganalyzer.report.service.TableServiceImpl">
+		<property name="tableDao" ref="tableDao"></property>
+	</bean>
+	<bean id="chartAction" class="com.accela.loganalyzer.report.action.ChartAction">
+		<property name="chartService" ref="chartService"></property>
+	</bean>
+	<bean id="reportAction" class="com.accela.loganalyzer.report.action.ReportAction">
+		<property name="chartService" ref="chartService"></property>
+		<property name="tableService" ref="tableService"></property>
+	</bean>
+	<!-- /.end report -->
+
+	<!-- sola -->
+	<bean id="logInfoCapterChain" class="com.accela.loganalyzer.readfile.LogInfoCaptureChain">
+		<property name="logInfoCaptures">
+			<list>
+				<bean class="com.accela.loganalyzer.readfile.MemoryCapture" />
+				<bean class="com.accela.loganalyzer.readfile.CommonCapture" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="logFileScanner" class="com.accela.loganalyzer.readfile.LogFileScanner">
+		<property name="logInfoCapterChain" ref="logInfoCapterChain"></property>
+		<property name="analysischain" ref="analysischain"></property>
+	</bean>
+
+	<bean id="dbAccessor" class="com.accela.loganalyzer.frame.database.DBAccessor">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="analysischain" class="com.accela.loganalyzer.loganalysis.LogAnalysisChain">
+		<property name="detailParsers">
+			<list>
+				<bean class="com.accela.loganalyzer.loganalysis.CommonParse">
+					<property name="dbAccessor" ref="dbAccessor" />
+				</bean>
+				<bean class="com.accela.loganalyzer.loganalysis.MemoryParse">
+					<property name="dbAccessor" ref="dbAccessor" />
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="logAnaylsisService" class="com.accela.loganalyzer.business.LogAnaylsisBusiness">
+		<property name="logFileScanner" ref="logFileScanner"></property>
+	</bean>
+
+	<bean id="logAnaylsisAction" class="com.accela.loganalyzer.action.LogAnalysisAction">
+		<property name="logAnaylsisService" ref="logAnaylsisService"></property>
+	</bean>
+	
+	<bean id="serverDao" class="com.accela.loganalyzer.mail.dao.ServerDaoImpl">
+		<property name="dbAccessor" ref="dbAccessor"/>
+	</bean>
+	
+	<bean id="receiverDao" class="com.accela.loganalyzer.mail.dao.ReceiverDaoImpl">
+		<property name="dbAccessor" ref="dbAccessor"/>
+	</bean>
+	
+	<bean id="senderDao" class="com.accela.loganalyzer.mail.dao.SenderDaoImpl">
+		<property name="dbAccessor" ref="dbAccessor"/>
+	</bean>
+	
+	<bean id="mailSendService" class="com.accela.loganalyzer.mail.business.MailSendBusiness">
+		<property name="serverDao" ref="serverDao"></property>
+		<property name="receiverDao" ref="receiverDao"></property>
+		<property name="senderDao" ref="senderDao"></property>
+	</bean>
+	
+	<bean id="mailSendConfigurationService" class="com.accela.loganalyzer.mail.business.MailSendConfigurationBusiness">
+		<property name="serverDao" ref="serverDao"></property>
+		<property name="receiverDao" ref="receiverDao"></property>
+		<property name="senderDao" ref="senderDao"></property>
+	</bean>
+	
+	<bean id="mailSendAction" class="com.accela.loganalyzer.mail.action.MailSendAction">
+		<property name="mailSendService" ref="mailSendService"/>
+		<property name="mailSendConfigurationService" ref="mailSendConfigurationService"/>
+	</bean>
+	
+	<!-- sola -->
+
+</beans>
